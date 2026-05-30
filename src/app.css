@@ -1,0 +1,151 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Mark-Hulk — Design tokens
+   Two themes, switched via <html data-theme="...">.
+   "sage"    = Forest Sage  (default, derived from the logo)
+   "emerald" = Dark Emerald (high-contrast alternative)
+   ============================================================ */
+
+:root,
+[data-theme="sage"] {
+  --bg:           #0b231a;
+  --bg-sidebar:   #0e2c20;
+  --bg-elevated:  #123528;
+  --bg-hover:     #16402f;
+  --border:       #1e4634;
+  --accent:       #348a63;  /* selection / active item */
+  --accent-soft:  #95d1af;  /* links, highlights (logo mint) */
+  --accent-text:  #eafff4;
+  --beige:        #cfc1a1;  /* headings / blockquote accent */
+  --text:         #e8f0ea;
+  --text-muted:   #8fa896;
+  --text-faint:   #5f7568;
+  --code-bg:      #0a1f17;
+  --code-border:  #1a3a2b;
+  --brand:        #3a6646;
+  --brand-mint:   #95d1af;
+  --scroll-thumb: #1f4a37;
+}
+
+[data-theme="emerald"] {
+  --bg:           #0a0c0a;
+  --bg-sidebar:   #131613;
+  --bg-elevated:  #1e241e;
+  --bg-hover:     #232b23;
+  --border:       #263026;
+  --accent:       #2ecc71;  /* bright green selection */
+  --accent-soft:  #33d375;
+  --accent-text:  #06170d;
+  --beige:        #cfc1a1;
+  --text:         #ffffff;
+  --text-muted:   #8a958a;
+  --text-faint:   #5a635a;
+  --code-bg:      #101410;
+  --code-border:  #262d26;
+  --brand:        #2ecc71;
+  --brand-mint:   #33d375;
+  --scroll-thumb: #2a332a;
+}
+
+/* Expose tokens to Tailwind utilities (v4 @theme inline) */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-sidebar: var(--bg-sidebar);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-hover: var(--bg-hover);
+  --color-border-base: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-text: var(--accent-text);
+  --color-beige: var(--beige);
+  --color-text-base: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-faint: var(--text-faint);
+  --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", "Consolas", monospace;
+}
+
+* {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  user-select: none;
+}
+
+/* Themed scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+  background-clip: content-box;
+}
+
+/* Smooth theme transitions */
+body,
+.themed {
+  transition: background-color 0.25s ease, color 0.25s ease,
+    border-color 0.25s ease;
+}
+
+/* Print / Save-as-PDF: show only the rendered document. */
+@media print {
+  html,
+  body {
+    height: auto;
+    overflow: visible;
+  }
+  .sidebar,
+  .toolbar,
+  .tabbar,
+  .divider,
+  .cm-host,
+  .search-overlay {
+    display: none !important;
+  }
+  .app,
+  .main,
+  .content {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .preview-scroll {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .md-body {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
