@@ -1,11 +1,11 @@
 # Mark-Hulk
 
-A native, lightweight Markdown **viewer and editor** for Windows — modern UI,
-tiny footprint, deeply integrated with your `.md` files.
+A native, lightweight Markdown **viewer and editor** for Windows and Linux —
+modern UI, tiny footprint, deeply integrated with your `.md` files.
 
 Built with **Tauri 2** (Rust), **SvelteKit** (Svelte 5), and **Tailwind v4**.
-It runs on the system WebView2, so the installer stays a few megabytes and
-memory use stays low.
+It runs on the system WebView (WebView2 on Windows, WebKitGTK on Linux), so the
+bundle stays a few megabytes and memory use stays low.
 
 ![Mark-Hulk — Forest Sage and Dark Emerald themes](screenshot.jpg)
 
@@ -56,14 +56,28 @@ pnpm tauri dev      # native window (compiles Rust on first run)
 pnpm dev            # browser-only UI preview (no file system)
 ```
 
+On **Linux (Fedora)**, install the WebKitGTK/GTK build dependencies first:
+
+```bash
+./scripts/setup-fedora.sh   # webkit2gtk4.1-devel, gtk3-devel, build tools, rpm-build
+```
+
+On other distributions install the Tauri prerequisites for your platform
+(`webkit2gtk-4.1`, `gtk3`, `librsvg2`, a C toolchain) — see the
+[Tauri Linux prerequisites](https://tauri.app/start/prerequisites/#linux).
+
 ## Build
 
 ```bash
-pnpm tauri build    # produces an .msi and an .exe (NSIS) installer
+pnpm tauri build                    # all bundles available on the host
+pnpm tauri build --bundles rpm      # Linux: just the .rpm (Fedora)
+pnpm tauri build --bundles nsis     # Windows: the .exe (NSIS) installer
 ```
 
-The NSIS `setup.exe` is recommended: it is the smallest bundle and the one that
-installs the custom `.md` document icon.
+On Windows the NSIS `setup.exe` is recommended: it is the smallest bundle and
+the one that installs the custom `.md` document icon. On Linux the `.rpm`
+installs a `.desktop` entry and registers Mark-Hulk as a handler for markdown
+files.
 
 ## Project layout
 
@@ -78,6 +92,7 @@ src/                        SvelteKit frontend
 src-tauri/src/lib.rs        Rust commands: read tree, read/write, watch, search
 src-tauri/installer/        NSIS hook + branded installer images
 scripts/build-assets.ps1    regenerates the file icon and installer art
+scripts/setup-fedora.sh     installs Linux (Fedora) build dependencies
 ```
 
 ## Tech stack
