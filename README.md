@@ -9,8 +9,6 @@ the preview is rendered natively to Pango markup. Because there is no embedded
 browser, a window idles at **~45 MB** of memory instead of the ~330 MB a
 WebView-based build of the same app used.
 
-![Mark-Hulk — Forest Sage theme](screenshot.jpg)
-
 ## Features
 
 - **Native, no web engine** — GTK4/libadwaita shell, single process.
