@@ -1,10 +1,11 @@
-//! App theming: a green "Forest Sage" palette applied over libadwaita, plus the
-//! matching GtkSourceView editor scheme. The app is called Mark-*Hulk* — green
-//! is the whole point.
+//! App theming. Two green themes — "Forest Sage" (default) and "Dark Emerald" —
+//! each pairing a libadwaita palette (CSS named-color overrides) with a matching
+//! GtkSourceView editor scheme. The app is called Mark-*Hulk*: green is the point.
 
-/// libadwaita named-color overrides — recolors window, header bar, sidebar,
-/// buttons, accents, popovers and dialogs in one shot.
-const CSS: &str = r#"
+pub const FOREST: &str = "forest";
+pub const EMERALD: &str = "emerald";
+
+const FOREST_CSS: &str = r#"
 @define-color window_bg_color   #0B231A;
 @define-color window_fg_color   #D6ECE0;
 @define-color view_bg_color     #0C2A20;
@@ -25,15 +26,44 @@ const CSS: &str = r#"
 .mh-sidebar { background-color: @sidebar_bg_color; }
 .mh-sidebar button { background: transparent; border-radius: 6px; }
 .mh-sidebar button:hover { background-color: alpha(#2ECC71, 0.12); }
-
-/* Pango links in the preview label follow the sage accent. */
 .mh-preview a { color: #95D1AF; }
 "#;
 
-/// Load the global CSS into the default display.
-pub fn load_css() {
+const EMERALD_CSS: &str = r#"
+@define-color window_bg_color   #0A0C0A;
+@define-color window_fg_color   #D4E6DC;
+@define-color view_bg_color     #0B0F0D;
+@define-color view_fg_color     #D4E6DC;
+@define-color headerbar_bg_color #0C100E;
+@define-color headerbar_fg_color #D4E6DC;
+@define-color card_bg_color     #0E1411;
+@define-color popover_bg_color  #0E1411;
+@define-color popover_fg_color  #D4E6DC;
+@define-color dialog_bg_color   #0B0F0D;
+@define-color dialog_fg_color   #D4E6DC;
+@define-color sidebar_bg_color  #080A08;
+@define-color sidebar_fg_color  #D4E6DC;
+@define-color accent_bg_color   #2ECC71;
+@define-color accent_fg_color   #05130B;
+@define-color accent_color      #46D886;
+
+.mh-sidebar { background-color: @sidebar_bg_color; }
+.mh-sidebar button { background: transparent; border-radius: 6px; }
+.mh-sidebar button:hover { background-color: alpha(#2ECC71, 0.14); }
+.mh-preview a { color: #46D886; }
+"#;
+
+fn css_for(theme: &str) -> &'static str {
+    if theme == EMERALD {
+        EMERALD_CSS
+    } else {
+        FOREST_CSS
+    }
+}
+
+/// Create the shared CSS provider and attach it to the default display.
+pub fn make_provider() -> gtk::CssProvider {
     let provider = gtk::CssProvider::new();
-    provider.load_from_data(CSS);
     if let Some(display) = gtk::gdk::Display::default() {
         gtk::style_context_add_provider_for_display(
             &display,
@@ -41,22 +71,41 @@ pub fn load_css() {
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
     }
+    provider
 }
 
-/// Install the bundled editor scheme into the user's data dir and return it.
-/// Falls back to "Adwaita-dark" if anything goes wrong.
-pub fn editor_scheme() -> Option<sourceview5::StyleScheme> {
-    let mgr = sourceview5::StyleSchemeManager::default();
+/// Swap the provider's palette to `theme`.
+pub fn apply_css(provider: &gtk::CssProvider, theme: &str) {
+    provider.load_from_data(css_for(theme));
+}
 
+/// Write both bundled editor schemes into the user's data dir and register them.
+pub fn install_schemes() {
     let dir = gtk::glib::user_data_dir().join("mark-hulk").join("styles");
     if std::fs::create_dir_all(&dir).is_ok() {
-        let file = dir.join("mark-hulk-forest.xml");
-        let _ = std::fs::write(&file, include_str!("../data/mark-hulk-forest.xml"));
+        let _ = std::fs::write(
+            dir.join("mark-hulk-forest.xml"),
+            include_str!("../data/mark-hulk-forest.xml"),
+        );
+        let _ = std::fs::write(
+            dir.join("mark-hulk-emerald.xml"),
+            include_str!("../data/mark-hulk-emerald.xml"),
+        );
         if let Some(path) = dir.to_str() {
-            mgr.append_search_path(path);
+            sourceview5::StyleSchemeManager::default().append_search_path(path);
         }
     }
+}
 
-    mgr.scheme("mark-hulk-forest")
+/// The editor scheme for `theme`, falling back to forest, then Adwaita-dark.
+pub fn scheme_for(theme: &str) -> Option<sourceview5::StyleScheme> {
+    let mgr = sourceview5::StyleSchemeManager::default();
+    let id = if theme == EMERALD {
+        "mark-hulk-emerald"
+    } else {
+        "mark-hulk-forest"
+    };
+    mgr.scheme(id)
+        .or_else(|| mgr.scheme("mark-hulk-forest"))
         .or_else(|| mgr.scheme("Adwaita-dark"))
 }

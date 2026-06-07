@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Mark-Hulk "Dark Emerald" GtkSourceView style scheme.
+  Near-black base with bright emerald accents.
+-->
+<style-scheme id="mark-hulk-emerald" name="Mark-Hulk Emerald" version="1.0">
+  <author>Mark-Hulk</author>
+  <description>Dark Emerald — near-black editor theme with emerald accents</description>
+
+  <color name="bg"     value="#0B0F0D"/>
+  <color name="fg"     value="#D4E6DC"/>
+  <color name="green"  value="#2ECC71"/>
+  <color name="emer"   value="#46D886"/>
+  <color name="beige"  value="#E0C9A6"/>
+  <color name="muted"  value="#5A6B62"/>
+  <color name="faint"  value="#2E3A33"/>
+  <color name="sel"    value="#15402B"/>
+  <color name="line"   value="#10221A"/>
+
+  <!-- Editor chrome -->
+  <style name="text"                foreground="fg"   background="bg"/>
+  <style name="background-pattern"  background="bg"/>
+  <style name="cursor"              foreground="emer"/>
+  <style name="current-line"        background="line"/>
+  <style name="current-line-number" foreground="emer" background="line"/>
+  <style name="line-numbers"        foreground="faint" background="bg"/>
+  <style name="selection"           background="sel"  foreground="fg"/>
+  <style name="draw-spaces"         foreground="faint"/>
+
+  <!-- Generic token defaults -->
+  <style name="def:comment"         foreground="muted" italic="true"/>
+  <style name="def:string"          foreground="beige"/>
+  <style name="def:keyword"         foreground="green" bold="true"/>
+  <style name="def:type"            foreground="emer"/>
+  <style name="def:number"          foreground="beige"/>
+  <style name="def:preprocessor"    foreground="green"/>
+  <style name="def:identifier"      foreground="fg"/>
+
+  <!-- Markdown-specific tokens -->
+  <style name="markdown:header"            foreground="fg"   bold="true"/>
+  <style name="markdown:emphasis"          foreground="fg"   italic="true"/>
+  <style name="markdown:strong-emphasis"   foreground="emer" bold="true"/>
+  <style name="markdown:code"              foreground="beige"/>
+  <style name="markdown:link-text"         foreground="green"/>
+  <style name="markdown:url"               foreground="muted" underline="single"/>
+  <style name="markdown:list-marker"       foreground="green" bold="true"/>
+  <style name="markdown:blockquote-marker" foreground="muted"/>
+  <style name="markdown:line-break"        foreground="muted"/>
+  <style name="markdown:backslash-escape"  foreground="muted"/>
+</style-scheme>

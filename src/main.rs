@@ -46,6 +46,9 @@ struct App {
     tab_view: adw::TabView,
     sidebar_scroll: gtk::ScrolledWindow,
     sidebar_list: gtk::Box,
+    sidebar_btn: gtk::ToggleButton,
+    css_provider: gtk::CssProvider,
+    theme: RefCell<String>,
     root: RefCell<Option<PathBuf>>,
     mode: Cell<Mode>,
     docs: RefCell<Vec<Rc<Doc>>>,
@@ -102,7 +105,9 @@ fn main() -> glib::ExitCode {
 
 fn build_app(gapp: &adw::Application) -> Rc<App> {
     adw::StyleManager::default().set_color_scheme(adw::ColorScheme::ForceDark);
-    style::load_css();
+    style::install_schemes();
+    let css_provider = style::make_provider();
+    style::apply_css(&css_provider, style::FOREST);
 
     let window = adw::ApplicationWindow::builder()
         .application(gapp)
@@ -180,6 +185,12 @@ fn build_app(gapp: &adw::Application) -> Rc<App> {
 
     // --- Header bar -------------------------------------------------------
     let header = adw::HeaderBar::new();
+    let sidebar_btn = gtk::ToggleButton::builder()
+        .icon_name("view-list-symbolic")
+        .active(true)
+        .tooltip_text("Toggle sidebar (Ctrl+B)")
+        .build();
+    header.pack_start(&sidebar_btn);
     let open_folder_btn = icon_button("folder-open-symbolic", "Open folder");
     let open_file_btn = icon_button("document-open-symbolic", "Open file");
     let new_btn = icon_button("document-new-symbolic", "New file (Ctrl+N)");
@@ -209,6 +220,16 @@ fn build_app(gapp: &adw::Application) -> Rc<App> {
     mode_box.append(&edit_btn);
     header.pack_end(&mode_box);
 
+    let theme_menu = gio::Menu::new();
+    theme_menu.append(Some("Forest Sage"), Some("win.theme::forest"));
+    theme_menu.append(Some("Dark Emerald"), Some("win.theme::emerald"));
+    let theme_btn = gtk::MenuButton::builder()
+        .icon_name("applications-graphics-symbolic")
+        .tooltip_text("Theme")
+        .menu_model(&theme_menu)
+        .build();
+    header.pack_end(&theme_btn);
+
     let toolbar_view = adw::ToolbarView::new();
     toolbar_view.add_top_bar(&header);
     toolbar_view.set_content(Some(&main_paned));
@@ -221,6 +242,9 @@ fn build_app(gapp: &adw::Application) -> Rc<App> {
         tab_view: tab_view.clone(),
         sidebar_scroll,
         sidebar_list,
+        sidebar_btn: sidebar_btn.clone(),
+        css_provider,
+        theme: RefCell::new(style::FOREST.to_string()),
         root: RefCell::new(None),
         mode: Cell::new(Mode::Split),
         docs: RefCell::new(Vec::new()),
@@ -249,6 +273,31 @@ fn build_app(gapp: &adw::Application) -> Rc<App> {
         &search_results,
         gapp,
     );
+
+    // Sidebar show/hide.
+    {
+        let app = app.clone();
+        sidebar_btn.connect_toggled(move |b| app.sidebar_scroll.set_visible(b.is_active()));
+    }
+
+    // Theme switcher: a stateful "win.theme" action backs the header menu.
+    {
+        let theme_action = gio::SimpleAction::new_stateful(
+            "theme",
+            Some(glib::VariantTy::STRING),
+            &style::FOREST.to_variant(),
+        );
+        {
+            let app = app.clone();
+            theme_action.connect_activate(move |action, param| {
+                if let Some(theme) = param.and_then(|p| p.str()) {
+                    action.set_state(&theme.to_variant());
+                    set_theme(&app, theme);
+                }
+            });
+        }
+        app.window.add_action(&theme_action);
+    }
 
     // Receive file-change events on the UI thread and reload the active doc.
     {
@@ -389,8 +438,7 @@ fn wire_signals(
         select_doc(app, &d);
     });
     add_action(app, gapp, "toggle-sidebar", "<Primary>b", |app| {
-        let v = app.sidebar_scroll.is_visible();
-        app.sidebar_scroll.set_visible(!v);
+        app.sidebar_btn.set_active(!app.sidebar_btn.is_active());
     });
     add_action(app, gapp, "search", "<Primary><Shift>f", |app| {
         let r = !app.search_revealer.reveals_child();
@@ -430,7 +478,7 @@ fn new_doc(app: &Rc<App>) -> Rc<Doc> {
     if let Some(lang) = sourceview5::LanguageManager::default().language("markdown") {
         buffer.set_language(Some(&lang));
     }
-    if let Some(scheme) = style::editor_scheme() {
+    if let Some(scheme) = style::scheme_for(&app.theme.borrow()) {
         buffer.set_style_scheme(Some(&scheme));
     }
     let view = sourceview5::View::with_buffer(&buffer);
@@ -538,6 +586,16 @@ fn on_tab_changed(app: &Rc<App>) {
             start_watch(app, &path);
         }
     }
+}
+
+fn set_theme(app: &Rc<App>, theme: &str) {
+    style::apply_css(&app.css_provider, theme);
+    if let Some(scheme) = style::scheme_for(theme) {
+        for doc in app.docs.borrow().iter() {
+            doc.buffer.set_style_scheme(Some(&scheme));
+        }
+    }
+    *app.theme.borrow_mut() = theme.to_string();
 }
 
 fn apply_mode(app: &Rc<App>, doc: &Rc<Doc>) {

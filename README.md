@@ -24,7 +24,9 @@ WebView-based build of the same app used.
 - **Cross-file search** — search the whole workspace and jump to a result.
 - **File watcher** — the open file auto-reloads when it changes on disk.
 - **File association** — open `.md` files from your file manager.
-- **Green "Forest Sage" theme** — deep forest base with sage/emerald accents.
+- **Two green themes** — "Forest Sage" and "Dark Emerald", switched live from a
+  header menu (the editor recolors with the rest of the UI).
+- **Hideable sidebar** — toggle from the header or with `Ctrl+B`.
 
 > Math (KaTeX) and diagrams (Mermaid) from the old WebView build are **not**
 > included by design — rendering them natively would require a browser engine,
@@ -67,6 +69,14 @@ open `.md` files with Mark-Hulk from your file manager. To make it the default:
 
 ```bash
 xdg-mime default com.sarta.mark-hulk.desktop text/markdown
+```
+
+### Build an `.rpm` (Fedora)
+
+```bash
+cargo install cargo-generate-rpm     # once
+cargo build --release && cargo generate-rpm
+sudo dnf install ./target/generate-rpm/mark-hulk-*.x86_64.rpm
 ```
 
 ## Project layout

@@ -26,3 +26,19 @@ lto = true
 codegen-units = 1
 strip = true
 panic = "abort"
+
+# ---- .rpm packaging (cargo-generate-rpm) --------------------------------
+# Build with:  cargo build --release && cargo generate-rpm
+[package.metadata.generate-rpm]
+assets = [
+    { source = "target/release/mark-hulk", dest = "/usr/bin/mark-hulk", mode = "0755" },
+    { source = "data/com.sarta.mark-hulk.desktop", dest = "/usr/share/applications/com.sarta.mark-hulk.desktop", mode = "0644" },
+    { source = "mark-hulk.svg", dest = "/usr/share/icons/hicolor/scalable/apps/com.sarta.mark-hulk.svg", mode = "0644" },
+    { source = "LICENSE", dest = "/usr/share/licenses/mark-hulk/LICENSE", mode = "0644" },
+    { source = "README.md", dest = "/usr/share/doc/mark-hulk/README.md", mode = "0644" },
+]
+
+[package.metadata.generate-rpm.requires]
+gtk4 = "*"
+libadwaita = "*"
+gtksourceview5 = "*"
