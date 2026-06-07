@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# Install the system dependencies needed to build and run Mark-Hulk on
-# Fedora (tested on Fedora 43). Tauri 2 renders through WebKitGTK, so the
-# WebKit/GTK development packages must be present before `pnpm tauri dev`
-# or `pnpm tauri build` will compile the Rust shell.
+# Install the system dependencies for the native GTK4 build of Mark-Hulk on
+# Fedora (tested on Fedora 43). Mark-Hulk is a native GTK4 / libadwaita app
+# written in Rust — no web engine — so it needs the GTK4 development stack
+# and a Rust toolchain.
 #
 # Usage: ./scripts/setup-fedora.sh
 #
@@ -14,25 +14,21 @@ if ! command -v dnf >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "Installing Tauri build dependencies via dnf (requires sudo)..."
+echo "Installing GTK4 build dependencies via dnf (requires sudo)..."
 
-# Toolchain for compiling the Rust shell and native crates.
+# Toolchain for compiling Rust and the native -sys crates.
 sudo dnf group install -y c-development || sudo dnf groupinstall -y "C Development Tools and Libraries"
 
-# Tauri 2 runtime/build libraries.
+# GTK4 native stack:
+#   gtk4-devel           the GTK4 toolkit
+#   libadwaita-devel     GNOME styling / adaptive widgets (AdwTabView, header bar)
+#   gtksourceview5-devel the source editor widget (markdown highlighting)
 sudo dnf install -y \
-  webkit2gtk4.1-devel \
-  gtk3-devel \
-  librsvg2-devel \
-  openssl-devel \
-  curl wget file
-
-# rpmbuild is needed to produce the .rpm bundle (`pnpm tauri build`).
-sudo dnf install -y rpm-build
+  gtk4-devel \
+  libadwaita-devel \
+  gtksourceview5-devel
 
 echo
 echo "Done. System dependencies installed."
 echo "Next:"
-echo "  corepack enable pnpm   # if pnpm is not yet available"
-echo "  pnpm install"
-echo "  pnpm tauri dev         # native window (compiles Rust on first run)"
+echo "  cargo run            # build and launch the native app"
