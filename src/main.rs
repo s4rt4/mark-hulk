@@ -31,7 +31,7 @@ enum Mode {
 struct Doc {
     buffer: sourceview5::Buffer,
     view: sourceview5::View,
-    preview_label: gtk::Label,
+    preview_box: gtk::Box,
     editor_scroll: gtk::ScrolledWindow,
     preview_scroll: gtk::ScrolledWindow,
     page: RefCell<Option<adw::TabPage>>,
@@ -106,8 +106,9 @@ fn main() -> glib::ExitCode {
 fn build_app(gapp: &adw::Application) -> Rc<App> {
     adw::StyleManager::default().set_color_scheme(adw::ColorScheme::ForceDark);
     style::install_schemes();
+    let theme = style::load_saved_theme();
     let css_provider = style::make_provider();
-    style::apply_css(&css_provider, style::FOREST);
+    style::apply_css(&css_provider, &theme);
 
     let window = adw::ApplicationWindow::builder()
         .application(gapp)
@@ -211,7 +212,7 @@ fn build_app(gapp: &adw::Application) -> Rc<App> {
     let edit_btn = gtk::ToggleButton::with_label("Edit");
     split_btn.set_group(Some(&preview_btn));
     edit_btn.set_group(Some(&preview_btn));
-    split_btn.set_active(true);
+    preview_btn.set_active(true);
     let mode_box = gtk::Box::builder()
         .css_classes(vec!["linked".to_string()])
         .build();
@@ -244,9 +245,9 @@ fn build_app(gapp: &adw::Application) -> Rc<App> {
         sidebar_list,
         sidebar_btn: sidebar_btn.clone(),
         css_provider,
-        theme: RefCell::new(style::FOREST.to_string()),
+        theme: RefCell::new(theme),
         root: RefCell::new(None),
-        mode: Cell::new(Mode::Split),
+        mode: Cell::new(Mode::Preview),
         docs: RefCell::new(Vec::new()),
         watcher: RefCell::new(None),
         reload_tx,
@@ -282,10 +283,11 @@ fn build_app(gapp: &adw::Application) -> Rc<App> {
 
     // Theme switcher: a stateful "win.theme" action backs the header menu.
     {
+        let initial = app.theme.borrow().clone();
         let theme_action = gio::SimpleAction::new_stateful(
             "theme",
             Some(glib::VariantTy::STRING),
-            &style::FOREST.to_variant(),
+            &initial.to_variant(),
         );
         {
             let app = app.clone();
@@ -496,28 +498,17 @@ fn new_doc(app: &Rc<App>) -> Rc<Doc> {
         .vexpand(true)
         .build();
 
-    let preview_label = gtk::Label::builder()
-        .use_markup(true)
-        .wrap(true)
-        .wrap_mode(gtk::pango::WrapMode::WordChar)
-        .xalign(0.0)
-        .yalign(0.0)
-        .selectable(true)
-        .valign(gtk::Align::Start)
-        .halign(gtk::Align::Fill)
-        .css_classes(vec!["mh-preview".to_string()])
-        .build();
-    preview_label.set_markup("<i>Open a folder or a file to begin.</i>");
-    let preview_holder = gtk::Box::builder()
+    let preview_box = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
+        .spacing(12)
         .margin_top(16)
         .margin_bottom(16)
         .margin_start(20)
         .margin_end(20)
+        .valign(gtk::Align::Start)
         .build();
-    preview_holder.append(&preview_label);
     let preview_scroll = gtk::ScrolledWindow::builder()
-        .child(&preview_holder)
+        .child(&preview_box)
         .hscrollbar_policy(gtk::PolicyType::Never)
         .hexpand(true)
         .vexpand(true)
@@ -533,7 +524,7 @@ fn new_doc(app: &Rc<App>) -> Rc<Doc> {
     let doc = Rc::new(Doc {
         buffer: buffer.clone(),
         view,
-        preview_label,
+        preview_box,
         editor_scroll,
         preview_scroll,
         page: RefCell::new(None),
@@ -558,6 +549,7 @@ fn new_doc(app: &Rc<App>) -> Rc<Doc> {
         });
     }
 
+    refresh_preview(&doc);
     apply_mode(app, &doc);
     doc
 }
@@ -596,6 +588,7 @@ fn set_theme(app: &Rc<App>, theme: &str) {
         }
     }
     *app.theme.borrow_mut() = theme.to_string();
+    style::save_theme(theme);
 }
 
 fn apply_mode(app: &Rc<App>, doc: &Rc<Doc>) {
@@ -611,8 +604,95 @@ fn apply_mode(app: &Rc<App>, doc: &Rc<Doc>) {
 fn refresh_preview(doc: &Rc<Doc>) {
     let buf = &doc.buffer;
     let text = buf.text(&buf.start_iter(), &buf.end_iter(), false);
-    let markup = markdown::to_pango_markup(&text);
-    doc.preview_label.set_markup(&markup);
+
+    while let Some(child) = doc.preview_box.first_child() {
+        doc.preview_box.remove(&child);
+    }
+
+    let blocks = markdown::render_blocks(&text);
+    if blocks.is_empty() {
+        doc.preview_box
+            .append(&preview_text("<i>Open a folder or a file to begin.</i>"));
+        return;
+    }
+    for block in blocks {
+        match block {
+            markdown::Block::Markup(m) => doc.preview_box.append(&preview_text(&m)),
+            markdown::Block::Table { head, rows } => {
+                doc.preview_box.append(&preview_table(&head, &rows))
+            }
+        }
+    }
+}
+
+fn preview_text(markup: &str) -> gtk::Label {
+    let label = gtk::Label::builder()
+        .use_markup(true)
+        .wrap(true)
+        .wrap_mode(gtk::pango::WrapMode::WordChar)
+        .xalign(0.0)
+        .yalign(0.0)
+        .selectable(true)
+        .halign(gtk::Align::Fill)
+        .css_classes(vec!["mh-preview".to_string()])
+        .build();
+    label.set_markup(markup);
+    label
+}
+
+fn preview_table(head: &[String], rows: &[Vec<String>]) -> gtk::Widget {
+    let grid = gtk::Grid::builder()
+        .column_spacing(18)
+        .row_spacing(6)
+        .margin_top(8)
+        .margin_bottom(8)
+        .margin_start(12)
+        .margin_end(12)
+        .build();
+    let ncols = head
+        .len()
+        .max(rows.iter().map(|r| r.len()).max().unwrap_or(0));
+
+    for (c, cell) in head.iter().enumerate() {
+        grid.attach(&cell_label(cell, true), c as i32, 0, 1, 1);
+    }
+    if ncols > 0 && !head.is_empty() {
+        let sep = gtk::Separator::new(gtk::Orientation::Horizontal);
+        grid.attach(&sep, 0, 1, ncols as i32, 1);
+    }
+    for (r, row) in rows.iter().enumerate() {
+        for (c, cell) in row.iter().enumerate() {
+            grid.attach(&cell_label(cell, false), c as i32, (r + 2) as i32, 1, 1);
+        }
+    }
+
+    gtk::Frame::builder()
+        .child(&grid)
+        .halign(gtk::Align::Start)
+        .margin_top(2)
+        .margin_bottom(4)
+        .build()
+        .upcast()
+}
+
+fn cell_label(markup: &str, bold: bool) -> gtk::Label {
+    let m = if markup.trim().is_empty() {
+        " ".to_string()
+    } else if bold {
+        format!("<b>{markup}</b>")
+    } else {
+        markup.to_string()
+    };
+    // Table cells don't wrap — wrapping labels inside a grid trigger GTK
+    // height-for-width measurement warnings, and short cells read better.
+    let label = gtk::Label::builder()
+        .use_markup(true)
+        .xalign(0.0)
+        .selectable(true)
+        .css_classes(vec!["mh-preview".to_string()])
+        .build();
+    label.set_markup(&m);
+    label
 }
 
 fn update_tab_title(doc: &Rc<Doc>) {

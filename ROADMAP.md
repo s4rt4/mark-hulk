@@ -27,9 +27,8 @@ tables, workspace explorer, cross-file search, file watcher (auto-reload),
 
 ## Preview & rendering
 
-- Real GtkGrid tables instead of monospace text
-- A second (light) theme and a theme switcher
-- Settings panel (font, size, theme) that persists
+- A light theme (both current themes are dark green)
+- Settings panel (font, size) that persists
 - Optional math rendering (pre-rendered images) for the rare math-heavy file
 
 ## Distribution

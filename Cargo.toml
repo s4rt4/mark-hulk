@@ -1,6 +1,6 @@
 [package]
 name = "mark-hulk"
-version = "0.2.0"
+version = "0.2.1"
 description = "A fast, lightweight native GTK4 Markdown viewer and editor"
 authors = ["s4rt4"]
 edition = "2021"

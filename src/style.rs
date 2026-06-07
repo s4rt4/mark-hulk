@@ -97,6 +97,27 @@ pub fn install_schemes() {
     }
 }
 
+fn theme_config_path() -> std::path::PathBuf {
+    gtk::glib::user_config_dir().join("mark-hulk").join("theme")
+}
+
+/// Read the saved theme name, defaulting to Forest Sage.
+pub fn load_saved_theme() -> String {
+    match std::fs::read_to_string(theme_config_path()) {
+        Ok(s) if s.trim() == EMERALD => EMERALD.to_string(),
+        _ => FOREST.to_string(),
+    }
+}
+
+/// Persist the chosen theme so it survives a restart.
+pub fn save_theme(theme: &str) {
+    let path = theme_config_path();
+    if let Some(dir) = path.parent() {
+        let _ = std::fs::create_dir_all(dir);
+    }
+    let _ = std::fs::write(path, theme);
+}
+
 /// The editor scheme for `theme`, falling back to forest, then Adwaita-dark.
 pub fn scheme_for(theme: &str) -> Option<sourceview5::StyleScheme> {
     let mgr = sourceview5::StyleSchemeManager::default();
