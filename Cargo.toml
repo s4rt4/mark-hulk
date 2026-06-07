@@ -16,6 +16,9 @@ adw = { version = "0.7", package = "libadwaita", features = ["v1_4"] }
 sourceview5 = { version = "0.9", features = ["v5_4"] }
 pulldown-cmark = "0.12"
 walkdir = "2"
+notify = "6"
+async-channel = "2"
+syntect = { version = "5", default-features = false, features = ["default-fancy"] }
 
 [profile.release]
 opt-level = "z"

@@ -1,63 +1,44 @@
 # Mark-Hulk Roadmap
 
-Current release: **v0.1.0** — workspace explorer, tabs, Preview/Split/Edit,
-CodeMirror editor, KaTeX + Mermaid, cross-file search, two themes, file watcher,
-HTML/PDF export, `.md` association with a custom icon, single-instance, and an
-NSIS/MSI installer.
+Mark-Hulk was rewritten from a Tauri/WebView app into a **native GTK4 + Rust**
+app, targeting Linux, to be as light and fast as possible (idle ~45 MB vs the
+old ~330 MB).
 
-This document lists planned work. Items are grouped by milestone; nothing here
-is committed to a date.
+Current state (**v0.2**): native GTK4/libadwaita shell, GtkSourceView editor,
+tabs, Preview/Split/Edit modes, native preview with syntax-highlighted code and
+tables, workspace explorer, cross-file search, file watcher (auto-reload),
+`.md` file association, and the green "Forest Sage" theme.
 
 ## Quick wins
 
-Small, high-value items that can land independently.
-
 - Unsaved-changes guard when closing a tab or the window
 - Scroll sync between editor and preview in Split mode
-- Draggable divider to resize the split
-- "Copy" button on code blocks
+- Draggable divider remembers its position
+- "Copy" button on rendered code blocks
 
-## v0.2 — Writing experience
+## Next — writing & navigation
 
-Make authoring as comfortable as reading.
-
-- Formatting toolbar and shortcuts (`Ctrl+B`, `Ctrl+I`, `Ctrl+K` for links)
-- Smart editing: auto-pair `**`/`[]`, continue lists on Enter, toggle checkboxes
-- Find & Replace within the document (`Ctrl+H`)
-- Paste or drag an image, save it to an `assets/` folder, and insert the link
-
-## v0.3 — Navigation & session
-
-Move fast, and remember state across restarts.
-
-- Outline / Table of Contents panel built from headings
+- Formatting shortcuts (`Ctrl+B`/`Ctrl+I`, links)
+- Smart editing: auto-pair, continue lists, toggle checkboxes
+- Find & Replace within the document
+- Outline / Table of Contents panel from headings
 - Quick Open fuzzy file finder (`Ctrl+P`)
-- Session restore: reopen tabs and the last window size/position
+- Session restore: reopen tabs and last window size
+
+## Preview & rendering
+
+- Real GtkGrid tables instead of monospace text
+- A second (light) theme and a theme switcher
 - Settings panel (font, size, theme) that persists
-- A Light theme (both current themes are dark)
-- Recent files and folders
+- Optional math rendering (pre-rendered images) for the rare math-heavy file
 
-## v0.4 — Trustworthy distribution
+## Distribution
 
-Automate releases and remove platform warnings.
-
-- GitHub Actions CI: build `.exe`/`.msi` and publish a release on each tag
-- Auto-updater (Tauri updater)
-- Code signing to remove the SmartScreen "Unknown publisher" warning
-- Cross-platform builds: macOS (`.dmg`) and Linux (`.AppImage`/`.deb`)
-
-## v0.5 — Knowledge base
-
-Grow from a viewer into a note-taking tool.
-
-- Wiki-links `[[...]]` with backlinks
-- Tags and tag-based search
-- Callouts / admonitions (`:::note`, `:::warning`)
-- Command palette (`Ctrl+Shift+P`)
-- Additional export: DOCX and custom export themes
+- `.rpm` packaging (Fedora) and a Flatpak
+- Desktop integration polish (icon themes, app metadata)
 
 ## Notes
 
-- Priorities depend on the goal: a personal daily tool leans on v0.2 + v0.3;
-  a public product leans on v0.4; a PKM/notes app leans on v0.5.
+- Native rendering means no embedded browser: Mermaid diagrams and live KaTeX
+  math are intentionally out of scope. The priority is speed and footprint.
 - Contributions and suggestions are welcome via issues.

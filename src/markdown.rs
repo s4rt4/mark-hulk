@@ -2,10 +2,33 @@
 //!
 //! Mark-Hulk renders natively (no web engine), so the preview is a single
 //! GtkLabel with Pango markup. pulldown-cmark drives a small event loop that
-//! emits markup. This is the lightweight v0 renderer; richer block widgets
-//! (tables, syntax-highlighted code frames) can replace it incrementally.
+//! emits markup; code blocks are syntax-highlighted with syntect.
+
+use std::sync::OnceLock;
 
 use pulldown_cmark::{CodeBlockKind, Event, HeadingLevel, Options, Parser, Tag, TagEnd};
+use syntect::easy::HighlightLines;
+use syntect::highlighting::{Theme, ThemeSet};
+use syntect::parsing::SyntaxSet;
+use syntect::util::LinesWithEndings;
+
+static SYNTAXES: OnceLock<SyntaxSet> = OnceLock::new();
+static THEME: OnceLock<Theme> = OnceLock::new();
+
+fn syntaxes() -> &'static SyntaxSet {
+    SYNTAXES.get_or_init(SyntaxSet::load_defaults_newlines)
+}
+
+fn theme() -> &'static Theme {
+    THEME.get_or_init(|| {
+        let ts = ThemeSet::load_defaults();
+        ts.themes
+            .get("base16-ocean.dark")
+            .or_else(|| ts.themes.values().next())
+            .cloned()
+            .expect("at least one default theme")
+    })
+}
 
 /// Escape a string for use inside Pango markup (text or attribute value).
 fn esc(s: &str) -> String {
@@ -34,6 +57,44 @@ fn heading_size(level: HeadingLevel) -> &'static str {
     }
 }
 
+fn lang_of(kind: &CodeBlockKind) -> String {
+    match kind {
+        CodeBlockKind::Fenced(info) => info.split_whitespace().next().unwrap_or("").to_string(),
+        CodeBlockKind::Indented => String::new(),
+    }
+}
+
+/// Syntax-highlight a code block into Pango markup (wrapped in `<tt>`).
+fn highlight_code(code: &str, lang: &str) -> String {
+    let ss = syntaxes();
+    let syntax = ss
+        .find_syntax_by_token(lang)
+        .or_else(|| ss.find_syntax_by_extension(lang))
+        .unwrap_or_else(|| ss.find_syntax_plain_text());
+
+    let mut hl = HighlightLines::new(syntax, theme());
+    let mut out = String::from("<tt>");
+    for line in LinesWithEndings::from(code) {
+        match hl.highlight_line(line, ss) {
+            Ok(ranges) => {
+                for (style, text) in ranges {
+                    let c = style.foreground;
+                    out.push_str(&format!(
+                        "<span foreground=\"#{:02X}{:02X}{:02X}\">{}</span>",
+                        c.r,
+                        c.g,
+                        c.b,
+                        esc(text)
+                    ));
+                }
+            }
+            Err(_) => out.push_str(&esc(line)),
+        }
+    }
+    out.push_str("</tt>");
+    out
+}
+
 /// Render markdown source to a Pango markup string.
 pub fn to_pango_markup(source: &str) -> String {
     let mut opts = Options::empty();
@@ -45,9 +106,12 @@ pub fn to_pango_markup(source: &str) -> String {
     let parser = Parser::new_ext(source, opts);
 
     let mut out = String::new();
-    let mut in_code = false;
-    // Ordered-list counters; None = bullet list.
     let mut list_stack: Vec<Option<u64>> = Vec::new();
+
+    // Code-block capture state.
+    let mut in_code = false;
+    let mut code_buf = String::new();
+    let mut code_lang = String::new();
 
     for event in parser {
         match event {
@@ -79,10 +143,16 @@ pub fn to_pango_markup(source: &str) -> String {
                     };
                     out.push_str(&format!("{}{}", indent, marker));
                 }
-                Tag::CodeBlock(_kind) => {
+                Tag::CodeBlock(kind) => {
                     in_code = true;
-                    out.push_str("<tt>");
+                    code_buf.clear();
+                    code_lang = lang_of(&kind);
                 }
+                // Tables: rendered as monospace, header row bold.
+                Tag::Table(_) => out.push_str("\n<tt>"),
+                Tag::TableHead => out.push_str("<b>"),
+                Tag::TableRow => {}
+                Tag::TableCell => {}
                 _ => {}
             },
             Event::End(tag) => match tag {
@@ -99,11 +169,22 @@ pub fn to_pango_markup(source: &str) -> String {
                 }
                 TagEnd::CodeBlock => {
                     in_code = false;
-                    out.push_str("</tt>\n\n");
+                    out.push_str(&highlight_code(&code_buf, &code_lang));
+                    out.push_str("\n\n");
                 }
+                TagEnd::TableHead => out.push_str("</b>\n"),
+                TagEnd::TableRow => out.push('\n'),
+                TagEnd::TableCell => out.push_str("  │  "),
+                TagEnd::Table => out.push_str("</tt>\n\n"),
                 _ => {}
             },
-            Event::Text(t) => out.push_str(&esc(&t)),
+            Event::Text(t) => {
+                if in_code {
+                    code_buf.push_str(&t);
+                } else {
+                    out.push_str(&esc(&t));
+                }
+            }
             Event::Code(t) => {
                 out.push_str("<tt>");
                 out.push_str(&esc(&t));
@@ -115,27 +196,14 @@ pub fn to_pango_markup(source: &str) -> String {
             Event::TaskListMarker(checked) => {
                 out.push_str(if checked { "☑  " } else { "☐  " });
             }
-            // HTML, footnote refs, and anything else: ignored in v0.
-            _ => {
-                let _ = in_code;
-            }
+            _ => {}
         }
     }
 
-    // Avoid Pango complaining about an empty string.
     let trimmed = out.trim_end().to_string();
     if trimmed.is_empty() {
         " ".to_string()
     } else {
         trimmed
-    }
-}
-
-/// Used by CodeBlockKind matching elsewhere if needed.
-#[allow(dead_code)]
-fn lang_of(kind: &CodeBlockKind) -> String {
-    match kind {
-        CodeBlockKind::Fenced(info) => info.split_whitespace().next().unwrap_or("").to_string(),
-        CodeBlockKind::Indented => String::new(),
     }
 }

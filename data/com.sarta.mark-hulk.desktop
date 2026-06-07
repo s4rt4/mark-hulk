@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Mark-Hulk
+GenericName=Markdown Editor
+Comment=A fast, lightweight native Markdown viewer and editor
+Exec=mark-hulk %F
+Icon=com.sarta.mark-hulk
+Terminal=false
+Categories=Utility;TextEditor;GTK;
+MimeType=text/markdown;text/x-markdown;
+StartupNotify=true
+Keywords=markdown;md;editor;notes;

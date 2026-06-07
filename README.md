@@ -1,108 +1,93 @@
 # Mark-Hulk
 
-A native, lightweight Markdown **viewer and editor** for Windows and Linux —
-modern UI, tiny footprint, deeply integrated with your `.md` files.
+A fast, lightweight **native** Markdown viewer and editor for Linux — no web
+engine, instant cold start, tiny memory footprint. The name has *Hulk* in it for
+a reason: it's green.
 
-Built with **Tauri 2** (Rust), **SvelteKit** (Svelte 5), and **Tailwind v4**.
-It runs on the system WebView (WebView2 on Windows, WebKitGTK on Linux), so the
-bundle stays a few megabytes and memory use stays low.
+Built with **GTK4 + libadwaita** and **Rust**. The editor is **GtkSourceView 5**;
+the preview is rendered natively to Pango markup. Because there is no embedded
+browser, a window idles at **~45 MB** of memory instead of the ~330 MB a
+WebView-based build of the same app used.
 
-![Mark-Hulk — Forest Sage and Dark Emerald themes](screenshot.jpg)
+![Mark-Hulk — Forest Sage theme](screenshot.jpg)
 
 ## Features
 
-- **Workspace explorer** — open a folder and browse a recursive `.md` file tree.
-- **Tabbed editing** — open multiple documents at once; each tab tracks its own
-  unsaved state.
+- **Native, no web engine** — GTK4/libadwaita shell, single process.
+- **Tabbed editing** — open many documents (AdwTabView); each tab tracks its
+  own unsaved state.
 - **Three view modes** — Preview, Split (live), and Edit.
-- **CodeMirror 6 editor** — markdown syntax highlighting, line numbers, and
-  soft-wrapping.
-- **Rich rendering** — headings, tables, task lists, footnotes, code
-  highlighting, and YAML frontmatter.
-- **Math and diagrams** — inline and block math with KaTeX, flowcharts and more
-  with Mermaid (both themed to match the UI).
-- **Cross-file search** — search the whole workspace and jump straight to a
-  result.
-- **Two themes** — Forest Sage (default) and Dark Emerald, switched live.
+- **GtkSourceView 5 editor** — markdown highlighting, line numbers, soft-wrap.
+- **Native preview** — headings, lists, task lists, tables, blockquotes, and
+  **syntax-highlighted** code blocks (syntect).
+- **Workspace explorer** — open a folder and browse its `.md` tree.
+- **Cross-file search** — search the whole workspace and jump to a result.
 - **File watcher** — the open file auto-reloads when it changes on disk.
-- **Export** — save a self-contained HTML file, or print to PDF.
-- **File association** — markdown files get their own document icon in Explorer
-  and open in Mark-Hulk on double-click.
-- **Single instance** — opening another file reuses the running window in a new
-  tab instead of launching a second copy.
+- **File association** — open `.md` files from your file manager.
+- **Green "Forest Sage" theme** — deep forest base with sage/emerald accents.
+
+> Math (KaTeX) and diagrams (Mermaid) from the old WebView build are **not**
+> included by design — rendering them natively would require a browser engine,
+> which is exactly the weight this rewrite removes.
 
 ## Keyboard shortcuts
 
-| Shortcut       | Action            |
-| -------------- | ----------------- |
-| `Ctrl+S`       | Save              |
-| `Ctrl+N`       | New file          |
-| `Ctrl+B`       | Toggle sidebar    |
-| `Ctrl+Shift+F` | Search workspace  |
+| Shortcut       | Action             |
+| -------------- | ------------------ |
+| `Ctrl+S`       | Save               |
+| `Ctrl+N`       | New file           |
+| `Ctrl+B`       | Toggle sidebar     |
+| `Ctrl+Shift+F` | Search workspace   |
 | `Ctrl+1/2/3`   | Preview/Split/Edit |
-
-## Themes
-
-| Theme        | Base      | Accent    | Source            |
-| ------------ | --------- | --------- | ----------------- |
-| Forest Sage  | `#0b231a` | `#95d1af` | derived from logo |
-| Dark Emerald | `#0a0c0a` | `#2ecc71` | palette 1         |
 
 ## Development
 
-```bash
-pnpm install
-pnpm tauri dev      # native window (compiles Rust on first run)
-pnpm dev            # browser-only UI preview (no file system)
-```
-
-On **Linux (Fedora)**, install the WebKitGTK/GTK build dependencies first:
+Install the GTK4 build dependencies (Fedora):
 
 ```bash
-./scripts/setup-fedora.sh   # webkit2gtk4.1-devel, gtk3-devel, build tools, rpm-build
+./scripts/setup-fedora.sh   # gtk4-devel, libadwaita-devel, gtksourceview5-devel
 ```
 
-On other distributions install the Tauri prerequisites for your platform
-(`webkit2gtk-4.1`, `gtk3`, `librsvg2`, a C toolchain) — see the
-[Tauri Linux prerequisites](https://tauri.app/start/prerequisites/#linux).
-
-## Build
+On other distributions install the equivalents: `gtk4`, `libadwaita`,
+`gtksourceview-5`, and a Rust toolchain.
 
 ```bash
-pnpm tauri build                    # all bundles available on the host
-pnpm tauri build --bundles rpm      # Linux: just the .rpm (Fedora)
-pnpm tauri build --bundles nsis     # Windows: the .exe (NSIS) installer
+cargo run            # build and launch
+cargo build          # debug build
 ```
 
-On Windows the NSIS `setup.exe` is recommended: it is the smallest bundle and
-the one that installs the custom `.md` document icon. On Linux the `.rpm`
-installs a `.desktop` entry and registers Mark-Hulk as a handler for markdown
-files.
+## Install
+
+```bash
+./scripts/install.sh   # release build + .desktop launcher + icon (no root)
+```
+
+This installs the binary to `~/.local/bin`, registers a launcher, and lets you
+open `.md` files with Mark-Hulk from your file manager. To make it the default:
+
+```bash
+xdg-mime default com.sarta.mark-hulk.desktop text/markdown
+```
 
 ## Project layout
 
 ```
-src/                        SvelteKit frontend
-  lib/components/           Sidebar, TreeNode, Toolbar, TabBar,
-                            CodeEditor, Preview, Search
-  lib/markdown/            markdown-it pipeline (KaTeX, Mermaid) + themed styles
-  lib/services/fs.js       bridge to the Rust file commands and dialogs
-  lib/services/export.js   HTML and PDF export
-  lib/stores/              reactive app state (runes, multi-tab)
-src-tauri/src/lib.rs        Rust commands: read tree, read/write, watch, search
-src-tauri/installer/        NSIS hook + branded installer images
-scripts/build-assets.ps1    regenerates the file icon and installer art
-scripts/setup-fedora.sh     installs Linux (Fedora) build dependencies
+src/main.rs        GTK4 app: window, tabs, sidebar, editor, preview, search
+src/markdown.rs    pulldown-cmark -> Pango markup, syntect code highlighting
+src/fs.rs          workspace tree, read/write, cross-file search
+src/watcher.rs     notify-based file watcher (auto-reload)
+src/style.rs       green palette (CSS) + editor style scheme
+data/              editor scheme, .desktop launcher
+scripts/           setup-fedora.sh, install.sh
 ```
 
 ## Tech stack
 
-| Layer    | Choice                                            |
-| -------- | ------------------------------------------------- |
-| Shell    | Tauri 2 (Rust, WebView2)                           |
-| UI       | SvelteKit / Svelte 5 runes, Tailwind v4           |
-| Editor   | CodeMirror 6                                       |
-| Markdown | markdown-it, highlight.js, KaTeX, Mermaid          |
+| Layer    | Choice                                  |
+| -------- | --------------------------------------- |
+| Shell    | GTK4 + libadwaita (Rust, no web engine) |
+| Editor   | GtkSourceView 5                         |
+| Markdown | pulldown-cmark + syntect                |
 
 ## License
 
