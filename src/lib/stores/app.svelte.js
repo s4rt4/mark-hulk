@@ -81,6 +81,15 @@ class AppState {
 
   constructor() {
     this.openDoc({ content: SAMPLE, name: "Welcome to Mark-Hulk.md" });
+    // Restore the last-used theme, if any.
+    try {
+      const saved = localStorage.getItem("mh-theme");
+      if (saved && ["sage", "emerald", "light"].includes(saved)) {
+        this.theme = saved;
+      }
+    } catch (_) {
+      /* localStorage unavailable */
+    }
   }
 
   // ---- active-tab accessors ----
@@ -172,13 +181,26 @@ class AppState {
     t.dirty = false;
   }
 
+  setTheme(id) {
+    if (AppState.THEMES.some((t) => t.id === id)) this.theme = id;
+  }
+
   toggleTheme() {
-    this.theme = this.theme === "sage" ? "emerald" : "sage";
+    const ids = AppState.THEMES.map((t) => t.id);
+    const next = (ids.indexOf(this.theme) + 1) % ids.length;
+    this.theme = ids[next];
   }
 
   setView(v) {
     this.view = v;
   }
 }
+
+export const THEMES = [
+  { id: "sage", label: "Forest Sage", swatch: "#95d1af" },
+  { id: "emerald", label: "Dark Emerald", swatch: "#2ecc71" },
+  { id: "light", label: "Daylight", swatch: "#2f8a5b" },
+];
+AppState.THEMES = THEMES;
 
 export const app = new AppState();

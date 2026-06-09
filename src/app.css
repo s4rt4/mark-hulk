@@ -2,9 +2,10 @@
 
 /* ============================================================
    Mark-Hulk — Design tokens
-   Two themes, switched via <html data-theme="...">.
+   Three themes, switched via <html data-theme="...">.
    "sage"    = Forest Sage  (default, derived from the logo)
-   "emerald" = Dark Emerald (high-contrast alternative)
+   "emerald" = Dark Emerald (high-contrast dark)
+   "light"   = Daylight     (light mode)
    ============================================================ */
 
 :root,
@@ -23,6 +24,8 @@
   --text-faint:   #5f7568;
   --code-bg:      #0a1f17;
   --code-border:  #1a3a2b;
+  --code-title:   #7fd1a8;
+  --code-number:  #e0b97d;
   --brand:        #3a6646;
   --brand-mint:   #95d1af;
   --scroll-thumb: #1f4a37;
@@ -43,9 +46,33 @@
   --text-faint:   #5a635a;
   --code-bg:      #101410;
   --code-border:  #262d26;
+  --code-title:   #7fd1a8;
+  --code-number:  #e0b97d;
   --brand:        #2ecc71;
   --brand-mint:   #33d375;
   --scroll-thumb: #2a332a;
+}
+
+[data-theme="light"] {
+  --bg:           #ffffff;
+  --bg-sidebar:   #f4f8f5;
+  --bg-elevated:  #eef3f0;
+  --bg-hover:     #e6ede8;
+  --border:       #d8e2db;
+  --accent:       #2f8a5b;  /* selection / active item */
+  --accent-soft:  #1d7a49;  /* links, bold (readable green on white) */
+  --accent-text:  #ffffff;
+  --beige:        #8a6d1f;  /* headings / code accent (dark gold) */
+  --text:         #15241b;
+  --text-muted:   #56655c;
+  --text-faint:   #93a299;
+  --code-bg:      #f3f6f3;
+  --code-border:  #e1e8e3;
+  --code-title:   #1d7a49;
+  --code-number:  #9a6a14;
+  --brand:        #3a6646;
+  --brand-mint:   #2f8a5b;
+  --scroll-thumb: #cdd8d0;
 }
 
 /* Expose tokens to Tailwind utilities (v4 @theme inline) */

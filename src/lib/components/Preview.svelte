@@ -9,21 +9,43 @@
   let container;
   const html = $derived(render(app.content));
 
+  const MERMAID_PALETTES = {
+    sage: {
+      primaryColor: "#123528",
+      primaryTextColor: "#e8f0ea",
+      primaryBorderColor: "#348a63",
+      lineColor: "#8fa896",
+      secondaryColor: "#0e2c20",
+      tertiaryColor: "#0b231a",
+    },
+    emerald: {
+      primaryColor: "#1e241e",
+      primaryTextColor: "#ffffff",
+      primaryBorderColor: "#2ecc71",
+      lineColor: "#8a958a",
+      secondaryColor: "#131613",
+      tertiaryColor: "#0a0c0a",
+    },
+    light: {
+      primaryColor: "#eef3f0",
+      primaryTextColor: "#15241b",
+      primaryBorderColor: "#2f8a5b",
+      lineColor: "#56655c",
+      secondaryColor: "#e6ede8",
+      tertiaryColor: "#f4f8f5",
+    },
+  };
+
   function mermaidConfig(theme) {
-    const sage = theme !== "emerald";
+    const palette = MERMAID_PALETTES[theme] || MERMAID_PALETTES.sage;
     return {
       startOnLoad: false,
       securityLevel: "loose",
       theme: "base",
       themeVariables: {
         background: "transparent",
-        primaryColor: sage ? "#123528" : "#1e241e",
-        primaryTextColor: sage ? "#e8f0ea" : "#ffffff",
-        primaryBorderColor: sage ? "#348a63" : "#2ecc71",
-        lineColor: sage ? "#8fa896" : "#8a958a",
-        secondaryColor: sage ? "#0e2c20" : "#131613",
-        tertiaryColor: sage ? "#0b231a" : "#0a0c0a",
         fontFamily: "Inter, system-ui, sans-serif",
+        ...palette,
       },
     };
   }

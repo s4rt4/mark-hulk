@@ -23,7 +23,8 @@ memory use stays low.
   with Mermaid (both themed to match the UI).
 - **Cross-file search** — search the whole workspace and jump straight to a
   result.
-- **Two themes** — Forest Sage (default) and Dark Emerald, switched live.
+- **Three themes** — Forest Sage (default), Dark Emerald, and Daylight (light),
+  switched live and remembered between sessions.
 - **File watcher** — the open file auto-reloads when it changes on disk.
 - **Export** — save a self-contained HTML file, or print to PDF.
 - **File association** — markdown files get their own document icon in Explorer
@@ -47,6 +48,7 @@ memory use stays low.
 | ------------ | --------- | --------- | ----------------- |
 | Forest Sage  | `#0b231a` | `#95d1af` | derived from logo |
 | Dark Emerald | `#0a0c0a` | `#2ecc71` | palette 1         |
+| Daylight     | `#ffffff` | `#2f8a5b` | light mode        |
 
 ## Development
 

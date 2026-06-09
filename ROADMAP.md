@@ -34,8 +34,10 @@ Move fast, and remember state across restarts.
 - Quick Open fuzzy file finder (`Ctrl+P`)
 - Session restore: reopen tabs and the last window size/position
 - Settings panel (font, size, theme) that persists
-- A Light theme (both current themes are dark)
 - Recent files and folders
+
+Done: a Light theme (Daylight) shipped in v0.1.1, and the chosen theme is
+remembered between sessions.
 
 ## v0.4 — Trustworthy distribution
 

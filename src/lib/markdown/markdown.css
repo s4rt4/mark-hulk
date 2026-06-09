@@ -230,11 +230,11 @@
 }
 .md-body .hljs-title,
 .md-body .hljs-function .hljs-title {
-  color: #7fd1a8;
+  color: var(--code-title);
 }
 .md-body .hljs-number,
 .md-body .hljs-literal {
-  color: #e0b97d;
+  color: var(--code-number);
 }
 .md-body .hljs-comment {
   color: var(--text-faint);

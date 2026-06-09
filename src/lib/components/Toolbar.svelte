@@ -9,8 +9,9 @@
     FolderOpen,
     Save,
     Download,
+    Check,
   } from "lucide-svelte";
-  import { app } from "$lib/stores/app.svelte.js";
+  import { app, THEMES } from "$lib/stores/app.svelte.js";
   import { openFolder, saveFile } from "$lib/services/fs.js";
   import { exportHtml, exportPdf } from "$lib/services/export.js";
 
@@ -21,14 +22,25 @@
   ];
 
   let exportMenu = $state(false);
+  let themeMenu = $state(false);
 
   function runExport(fn) {
     exportMenu = false;
     fn();
   }
+
+  function pickTheme(id) {
+    themeMenu = false;
+    app.setTheme(id);
+  }
+
+  function closeMenus() {
+    exportMenu = false;
+    themeMenu = false;
+  }
 </script>
 
-<svelte:window onclick={() => (exportMenu = false)} />
+<svelte:window onclick={closeMenus} />
 
 <header class="toolbar themed">
   <div class="left">
@@ -97,13 +109,29 @@
     >
       <Search size={18} />
     </button>
-    <button
-      class="icon-btn"
-      title="Switch theme ({app.theme})"
-      onclick={() => app.toggleTheme()}
-    >
-      <Palette size={18} />
-    </button>
+    <div class="theme-wrap">
+      <button
+        class="icon-btn"
+        title="Theme"
+        onclick={(e) => {
+          e.stopPropagation();
+          themeMenu = !themeMenu;
+        }}
+      >
+        <Palette size={18} />
+      </button>
+      {#if themeMenu}
+        <div class="menu right" role="menu">
+          {#each THEMES as t (t.id)}
+            <button class="theme-item" onclick={() => pickTheme(t.id)}>
+              <span class="swatch" style="background: {t.swatch}"></span>
+              <span class="theme-label">{t.label}</span>
+              {#if app.theme === t.id}<Check size={15} class="check" />{/if}
+            </button>
+          {/each}
+        </div>
+      {/if}
+    </div>
   </div>
 </header>
 
@@ -136,7 +164,8 @@
   .center {
     flex-shrink: 0;
   }
-  .export-wrap {
+  .export-wrap,
+  .theme-wrap {
     position: relative;
   }
   .menu {
@@ -149,7 +178,41 @@
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 0.3rem;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+  }
+  .menu.right {
+    left: auto;
+    right: 0;
+  }
+  .theme-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    text-align: left;
+    padding: 0.5rem 0.6rem;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text);
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .theme-item:hover {
+    background: var(--bg-hover);
+  }
+  .theme-label {
+    flex: 1;
+  }
+  .swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .theme-item :global(.check) {
+    color: var(--accent-soft);
   }
   .menu button {
     display: block;
