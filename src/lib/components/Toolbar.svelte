@@ -184,7 +184,9 @@
     left: auto;
     right: 0;
   }
-  .theme-item {
+  /* Higher specificity than the shared `.menu button` rule above,
+     so these win (otherwise display:flex is overridden by display:block). */
+  .menu button.theme-item {
     display: flex;
     align-items: center;
     gap: 0.6rem;
@@ -196,22 +198,26 @@
     background: transparent;
     color: var(--text);
     font-size: 0.85rem;
+    white-space: nowrap;
     cursor: pointer;
   }
-  .theme-item:hover {
+  .menu button.theme-item:hover {
     background: var(--bg-hover);
+    color: var(--text);
   }
   .theme-label {
-    flex: 1;
+    flex: 1 1 auto;
   }
   .swatch {
-    width: 14px;
-    height: 14px;
+    display: block;
+    flex: 0 0 auto;
+    width: 13px;
+    height: 13px;
     border-radius: 4px;
-    border: 1px solid var(--border);
-    flex-shrink: 0;
+    border: 1px solid color-mix(in srgb, var(--text) 18%, transparent);
   }
-  .theme-item :global(.check) {
+  .menu button.theme-item :global(.check) {
+    flex: 0 0 auto;
     color: var(--accent-soft);
   }
   .menu button {
