@@ -5,6 +5,7 @@
 //! is built from a sequence of `Block`s rather than one string. Code blocks are
 //! syntax-highlighted with syntect.
 
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::OnceLock;
 
 use pulldown_cmark::{CodeBlockKind, Event, HeadingLevel, Options, Parser, Tag, TagEnd};
@@ -25,21 +26,37 @@ pub enum Block {
 }
 
 static SYNTAXES: OnceLock<SyntaxSet> = OnceLock::new();
-static THEME: OnceLock<Theme> = OnceLock::new();
+static THEME_DARK: OnceLock<Theme> = OnceLock::new();
+static THEME_LIGHT: OnceLock<Theme> = OnceLock::new();
+
+/// Mirrors the app's theme: when true, code blocks highlight with a light
+/// syntect palette. Set via [`set_light`] on startup and on every theme switch.
+static LIGHT: AtomicBool = AtomicBool::new(false);
+
+/// Select the light or dark code-highlight palette to match the app theme.
+pub fn set_light(light: bool) {
+    LIGHT.store(light, Ordering::Relaxed);
+}
 
 fn syntaxes() -> &'static SyntaxSet {
     SYNTAXES.get_or_init(SyntaxSet::load_defaults_newlines)
 }
 
+fn load_theme(name: &str) -> Theme {
+    let ts = ThemeSet::load_defaults();
+    ts.themes
+        .get(name)
+        .or_else(|| ts.themes.values().next())
+        .cloned()
+        .expect("at least one default theme")
+}
+
 fn theme() -> &'static Theme {
-    THEME.get_or_init(|| {
-        let ts = ThemeSet::load_defaults();
-        ts.themes
-            .get("base16-ocean.dark")
-            .or_else(|| ts.themes.values().next())
-            .cloned()
-            .expect("at least one default theme")
-    })
+    if LIGHT.load(Ordering::Relaxed) {
+        THEME_LIGHT.get_or_init(|| load_theme("base16-ocean.light"))
+    } else {
+        THEME_DARK.get_or_init(|| load_theme("base16-ocean.dark"))
+    }
 }
 
 /// Escape a string for use inside Pango markup (text or attribute value).

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Mark-Hulk "Light Sage" GtkSourceView style scheme.
+  Clean white editor with a soft mint background and Hulk-green accents — the
+  light counterpart to Forest Sage. Token colors are darkened for readable
+  contrast on a light background.
+-->
+<style-scheme id="mark-hulk-light" name="Mark-Hulk Light" version="1.0">
+  <author>Mark-Hulk</author>
+  <description>Light Sage — light green editor theme</description>
+
+  <color name="bg"     value="#FFFFFF"/>
+  <color name="fg"     value="#143025"/>
+  <color name="green"  value="#1E9E59"/>
+  <color name="sage"   value="#176B4A"/>
+  <color name="amber"  value="#9A5B00"/>
+  <color name="muted"  value="#5E7468"/>
+  <color name="faint"  value="#B8C8BF"/>
+  <color name="sel"    value="#BFE6D0"/>
+  <color name="line"   value="#EAF3ED"/>
+
+  <!-- Editor chrome -->
+  <style name="text"                foreground="fg"   background="bg"/>
+  <style name="background-pattern"  background="bg"/>
+  <style name="cursor"              foreground="sage"/>
+  <style name="current-line"        background="line"/>
+  <style name="current-line-number" foreground="sage" background="line"/>
+  <style name="line-numbers"        foreground="faint" background="bg"/>
+  <style name="selection"           background="sel"  foreground="fg"/>
+  <style name="draw-spaces"         foreground="faint"/>
+
+  <!-- Generic token defaults -->
+  <style name="def:comment"         foreground="muted" italic="true"/>
+  <style name="def:string"          foreground="amber"/>
+  <style name="def:keyword"         foreground="green" bold="true"/>
+  <style name="def:type"            foreground="sage"/>
+  <style name="def:number"          foreground="amber"/>
+  <style name="def:preprocessor"    foreground="green"/>
+  <style name="def:identifier"      foreground="fg"/>
+
+  <!-- Markdown-specific tokens -->
+  <style name="markdown:header"            foreground="fg"   bold="true"/>
+  <style name="markdown:emphasis"          foreground="fg"   italic="true"/>
+  <style name="markdown:strong-emphasis"   foreground="sage" bold="true"/>
+  <style name="markdown:code"              foreground="amber"/>
+  <style name="markdown:link-text"         foreground="green"/>
+  <style name="markdown:url"               foreground="muted" underline="single"/>
+  <style name="markdown:list-marker"       foreground="green" bold="true"/>
+  <style name="markdown:blockquote-marker" foreground="muted"/>
+  <style name="markdown:line-break"        foreground="muted"/>
+  <style name="markdown:backslash-escape"  foreground="muted"/>
+</style-scheme>

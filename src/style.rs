@@ -1,9 +1,17 @@
-//! App theming. Two green themes — "Forest Sage" (default) and "Dark Emerald" —
-//! each pairing a libadwaita palette (CSS named-color overrides) with a matching
-//! GtkSourceView editor scheme. The app is called Mark-*Hulk*: green is the point.
+//! App theming. Three themes — "Forest Sage" (default), "Dark Emerald", and the
+//! light "Light Sage" — each pairing a libadwaita palette (CSS named-color
+//! overrides) with a matching GtkSourceView editor scheme. The app is called
+//! Mark-*Hulk*: green is the point, light or dark.
 
 pub const FOREST: &str = "forest";
 pub const EMERALD: &str = "emerald";
+pub const LIGHT: &str = "light";
+
+/// Whether `theme` is a light theme. Drives the adwaita color-scheme and the
+/// syntect code-highlight palette, which both differ light vs dark.
+pub fn is_light(theme: &str) -> bool {
+    theme == LIGHT
+}
 
 const FOREST_CSS: &str = r#"
 @define-color window_bg_color   #0B231A;
@@ -53,11 +61,35 @@ const EMERALD_CSS: &str = r#"
 .mh-preview a { color: #46D886; }
 "#;
 
+const LIGHT_CSS: &str = r#"
+@define-color window_bg_color   #F2F8F4;
+@define-color window_fg_color   #143025;
+@define-color view_bg_color     #FFFFFF;
+@define-color view_fg_color     #143025;
+@define-color headerbar_bg_color #E8F1EB;
+@define-color headerbar_fg_color #143025;
+@define-color card_bg_color     #FFFFFF;
+@define-color popover_bg_color  #FFFFFF;
+@define-color popover_fg_color  #143025;
+@define-color dialog_bg_color   #FFFFFF;
+@define-color dialog_fg_color   #143025;
+@define-color sidebar_bg_color  #E8F1EB;
+@define-color sidebar_fg_color  #143025;
+@define-color accent_bg_color   #1E9E59;
+@define-color accent_fg_color   #FFFFFF;
+@define-color accent_color      #1B7A45;
+
+.mh-sidebar { background-color: @sidebar_bg_color; }
+.mh-sidebar button { background: transparent; border-radius: 6px; }
+.mh-sidebar button:hover { background-color: alpha(#1E9E59, 0.12); }
+.mh-preview a { color: #1B7A45; }
+"#;
+
 fn css_for(theme: &str) -> &'static str {
-    if theme == EMERALD {
-        EMERALD_CSS
-    } else {
-        FOREST_CSS
+    match theme {
+        EMERALD => EMERALD_CSS,
+        LIGHT => LIGHT_CSS,
+        _ => FOREST_CSS,
     }
 }
 
@@ -91,6 +123,10 @@ pub fn install_schemes() {
             dir.join("mark-hulk-emerald.xml"),
             include_str!("../data/mark-hulk-emerald.xml"),
         );
+        let _ = std::fs::write(
+            dir.join("mark-hulk-light.xml"),
+            include_str!("../data/mark-hulk-light.xml"),
+        );
         if let Some(path) = dir.to_str() {
             sourceview5::StyleSchemeManager::default().append_search_path(path);
         }
@@ -105,6 +141,7 @@ fn theme_config_path() -> std::path::PathBuf {
 pub fn load_saved_theme() -> String {
     match std::fs::read_to_string(theme_config_path()) {
         Ok(s) if s.trim() == EMERALD => EMERALD.to_string(),
+        Ok(s) if s.trim() == LIGHT => LIGHT.to_string(),
         _ => FOREST.to_string(),
     }
 }
@@ -118,15 +155,21 @@ pub fn save_theme(theme: &str) {
     let _ = std::fs::write(path, theme);
 }
 
-/// The editor scheme for `theme`, falling back to forest, then Adwaita-dark.
+/// The editor scheme for `theme`. Light falls back to plain Adwaita; the dark
+/// themes fall back to forest, then Adwaita-dark.
 pub fn scheme_for(theme: &str) -> Option<sourceview5::StyleScheme> {
     let mgr = sourceview5::StyleSchemeManager::default();
-    let id = if theme == EMERALD {
-        "mark-hulk-emerald"
+    let id = match theme {
+        EMERALD => "mark-hulk-emerald",
+        LIGHT => "mark-hulk-light",
+        _ => "mark-hulk-forest",
+    };
+    let fallback = if is_light(theme) {
+        "Adwaita"
     } else {
-        "mark-hulk-forest"
+        "Adwaita-dark"
     };
     mgr.scheme(id)
         .or_else(|| mgr.scheme("mark-hulk-forest"))
-        .or_else(|| mgr.scheme("Adwaita-dark"))
+        .or_else(|| mgr.scheme(fallback))
 }

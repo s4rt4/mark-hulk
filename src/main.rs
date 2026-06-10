@@ -104,9 +104,10 @@ fn main() -> glib::ExitCode {
 }
 
 fn build_app(gapp: &adw::Application) -> Rc<App> {
-    adw::StyleManager::default().set_color_scheme(adw::ColorScheme::ForceDark);
     style::install_schemes();
     let theme = style::load_saved_theme();
+    adw::StyleManager::default().set_color_scheme(color_scheme_for(&theme));
+    markdown::set_light(style::is_light(&theme));
     let css_provider = style::make_provider();
     style::apply_css(&css_provider, &theme);
 
@@ -224,6 +225,7 @@ fn build_app(gapp: &adw::Application) -> Rc<App> {
     let theme_menu = gio::Menu::new();
     theme_menu.append(Some("Forest Sage"), Some("win.theme::forest"));
     theme_menu.append(Some("Dark Emerald"), Some("win.theme::emerald"));
+    theme_menu.append(Some("Light Sage"), Some("win.theme::light"));
     let theme_btn = gtk::MenuButton::builder()
         .icon_name("applications-graphics-symbolic")
         .tooltip_text("Theme")
@@ -580,7 +582,18 @@ fn on_tab_changed(app: &Rc<App>) {
     }
 }
 
+/// Map a theme to the libadwaita color-scheme it should force.
+fn color_scheme_for(theme: &str) -> adw::ColorScheme {
+    if style::is_light(theme) {
+        adw::ColorScheme::ForceLight
+    } else {
+        adw::ColorScheme::ForceDark
+    }
+}
+
 fn set_theme(app: &Rc<App>, theme: &str) {
+    adw::StyleManager::default().set_color_scheme(color_scheme_for(theme));
+    markdown::set_light(style::is_light(theme));
     style::apply_css(&app.css_provider, theme);
     if let Some(scheme) = style::scheme_for(theme) {
         for doc in app.docs.borrow().iter() {
@@ -589,6 +602,11 @@ fn set_theme(app: &Rc<App>, theme: &str) {
     }
     *app.theme.borrow_mut() = theme.to_string();
     style::save_theme(theme);
+    // Code-block colors are baked into the preview markup by syntect, so a
+    // light<->dark switch needs every open preview rebuilt.
+    for doc in app.docs.borrow().iter() {
+        refresh_preview(doc);
+    }
 }
 
 fn apply_mode(app: &Rc<App>, doc: &Rc<Doc>) {
