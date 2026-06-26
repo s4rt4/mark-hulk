@@ -1,6 +1,6 @@
 [package]
 name = "mark-hulk"
-version = "0.2.3"
+version = "0.2.4"
 description = "A fast, lightweight native GTK4 Markdown viewer and editor"
 authors = ["s4rt4"]
 edition = "2021"
@@ -19,6 +19,8 @@ walkdir = "2"
 notify = "6"
 async-channel = "2"
 syntect = { version = "5", default-features = false, features = ["default-fancy"] }
+cairo-rs = { version = "0.20", features = ["pdf"] }
+pangocairo = "0.20"
 
 [profile.release]
 opt-level = "z"
