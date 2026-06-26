@@ -18,6 +18,10 @@ use syntect::util::LinesWithEndings;
 pub enum Block {
     /// A run of non-table content, already as Pango markup.
     Markup(String),
+    /// A fenced/indented code block, already highlighted as Pango markup
+    /// (wrapped in `<tt>`). Kept separate so the preview can give it its own
+    /// horizontally-scrollable container instead of clipping long lines.
+    Code(String),
     /// A table; each cell holds Pango markup. `head` may be empty.
     Table {
         head: Vec<String>,
@@ -218,8 +222,8 @@ pub fn render_blocks(source: &str) -> Vec<Block> {
                 }
                 TagEnd::CodeBlock => {
                     in_code = false;
-                    out.push_str(&highlight_code(&code_buf, &code_lang));
-                    out.push_str("\n\n");
+                    flush(&mut out, &mut blocks);
+                    blocks.push(Block::Code(highlight_code(&code_buf, &code_lang)));
                 }
                 TagEnd::TableCell => row.push(std::mem::take(&mut cell)),
                 TagEnd::TableRow => {

@@ -636,8 +636,9 @@ fn refresh_preview(doc: &Rc<Doc>) {
     for block in blocks {
         match block {
             markdown::Block::Markup(m) => doc.preview_box.append(&preview_text(&m)),
+            markdown::Block::Code(m) => doc.preview_box.append(&preview_code(&m)),
             markdown::Block::Table { head, rows } => {
-                doc.preview_box.append(&preview_table(&head, &rows))
+                doc.preview_box.append(&hscroll(&preview_table(&head, &rows)))
             }
         }
     }
@@ -656,6 +657,37 @@ fn preview_text(markup: &str) -> gtk::Label {
         .build();
     label.set_markup(markup);
     label
+}
+
+/// A code block: a non-wrapping monospace label so long lines keep their shape,
+/// placed in its own horizontally-scrollable container via [`hscroll`].
+fn preview_code(markup: &str) -> gtk::Widget {
+    let label = gtk::Label::builder()
+        .use_markup(true)
+        .wrap(false)
+        .xalign(0.0)
+        .yalign(0.0)
+        .selectable(true)
+        .halign(gtk::Align::Start)
+        .css_classes(vec!["mh-preview".to_string()])
+        .build();
+    label.set_markup(markup);
+    hscroll(&label.upcast())
+}
+
+/// Wrap a non-wrapping child (code block, wide table) in a scrolled window that
+/// scrolls horizontally on demand but never vertically — so it overflows into
+/// its own scrollbar instead of clipping against the narrow preview pane. Height
+/// follows the child's natural size (`propagate_natural_height`).
+fn hscroll(child: &gtk::Widget) -> gtk::Widget {
+    gtk::ScrolledWindow::builder()
+        .child(child)
+        .hscrollbar_policy(gtk::PolicyType::Automatic)
+        .vscrollbar_policy(gtk::PolicyType::Never)
+        .propagate_natural_height(true)
+        .halign(gtk::Align::Fill)
+        .build()
+        .upcast()
 }
 
 fn preview_table(head: &[String], rows: &[Vec<String>]) -> gtk::Widget {
