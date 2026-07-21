@@ -12,10 +12,13 @@ is committed to a date.
 
 Small, high-value items that can land independently.
 
+Done (v0.3.0):
+
 - Unsaved-changes guard when closing a tab or the window
 - Scroll sync between editor and preview in Split mode
-- Draggable divider to resize the split
+- Draggable divider to resize the split (position is remembered)
 - "Copy" button on code blocks
+- Home screen with recent files (grid/list view) replaces the Welcome tab
 
 ## v0.2 — Writing experience
 
@@ -34,10 +37,11 @@ Move fast, and remember state across restarts.
 - Quick Open fuzzy file finder (`Ctrl+P`)
 - Session restore: reopen tabs and the last window size/position
 - Settings panel (font, size, theme) that persists
-- Recent files and folders
+- Recent folders
 
 Done: a Light theme (Daylight) shipped in v0.1.1, and the chosen theme is
-remembered between sessions.
+remembered between sessions. Recent *files* shipped with the v0.3.0 Home
+screen.
 
 ## v0.4 — Trustworthy distribution
 

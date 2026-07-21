@@ -122,6 +122,45 @@
   color: var(--text);
 }
 
+/* Code-block wrapper (injected by Preview) hosting the Copy button.
+   The wrapper takes over the pre's bottom margin so spacing is unchanged. */
+.md-body .md-code {
+  position: relative;
+  margin: 0 0 1.2rem;
+}
+.md-body .md-code pre.hljs {
+  margin: 0;
+}
+.md-body .md-copy {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.22rem 0.6rem;
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  font-weight: 600;
+  border: 1px solid var(--code-border);
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+}
+.md-body .md-code:hover .md-copy,
+.md-body .md-copy:focus-visible {
+  opacity: 1;
+}
+.md-body .md-copy:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.md-body .md-copy.done {
+  opacity: 1;
+  color: var(--accent-soft);
+  border-color: var(--accent);
+}
+
 /* Tables */
 .md-body table {
   width: 100%;

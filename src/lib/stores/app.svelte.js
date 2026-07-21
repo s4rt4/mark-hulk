@@ -2,7 +2,7 @@
 // Multi-document: `tabs` holds open files; `active` is the focused one.
 // `content`/`currentPath`/`dirty` are convenience accessors for the active tab.
 
-const SAMPLE = `---
+export const SAMPLE = `---
 title: "Welcome to Mark-Hulk"
 keywords:
   - Markdown
@@ -77,16 +77,25 @@ class AppState {
   rootPath = $state(null);
   tree = $state([]);
 
+  // recent files (shown on the Home screen when no tab is open)
+  recent = $state([]); // {path, name, at}
+  recentView = $state("grid"); // "grid" | "list"
+
   _seq = 0;
 
   constructor() {
-    this.openDoc({ content: SAMPLE, name: "Welcome to Mark-Hulk.md" });
-    // Restore the last-used theme, if any.
+    // Restore the last-used theme, recent files, and view mode, if any.
     try {
       const saved = localStorage.getItem("mh-theme");
       if (saved && ["sage", "emerald", "light"].includes(saved)) {
         this.theme = saved;
       }
+      const recent = JSON.parse(localStorage.getItem("mh-recent") || "[]");
+      if (Array.isArray(recent)) {
+        this.recent = recent.filter((r) => r && typeof r.path === "string");
+      }
+      const rv = localStorage.getItem("mh-recent-view");
+      if (rv === "grid" || rv === "list") this.recentView = rv;
     } catch (_) {
       /* localStorage unavailable */
     }
@@ -127,6 +136,7 @@ class AppState {
   /** Open a document; if its path is already open, focus that tab. */
   openDoc({ path = null, name = null, content = "" }) {
     if (path) {
+      this.addRecent(path, name);
       const existing = this.tabs.find((t) => t.path === path);
       if (existing) {
         existing.content = content;
@@ -162,7 +172,7 @@ class AppState {
       const next = this.tabs[idx] || this.tabs[idx - 1] || null;
       this.activeId = next ? next.id : null;
     }
-    if (this.tabs.length === 0) this.newFile();
+    // No auto "Untitled" tab: an empty tab list shows the Home screen.
   }
 
   activate(id) {
@@ -176,9 +186,49 @@ class AppState {
     if (path) {
       t.path = path;
       t.name = baseName(path);
+      this.addRecent(path);
     }
     t.savedContent = t.content;
     t.dirty = false;
+  }
+
+  // ---- recent files ----
+  addRecent(path, name = null) {
+    if (!path) return;
+    const entry = { path, name: name || baseName(path), at: Date.now() };
+    this.recent = [
+      entry,
+      ...this.recent.filter((r) => r.path !== path),
+    ].slice(0, 30);
+    this._persistRecent();
+  }
+
+  removeRecent(path) {
+    this.recent = this.recent.filter((r) => r.path !== path);
+    this._persistRecent();
+  }
+
+  clearRecent() {
+    this.recent = [];
+    this._persistRecent();
+  }
+
+  setRecentView(v) {
+    if (v !== "grid" && v !== "list") return;
+    this.recentView = v;
+    try {
+      localStorage.setItem("mh-recent-view", v);
+    } catch (_) {
+      /* localStorage unavailable */
+    }
+  }
+
+  _persistRecent() {
+    try {
+      localStorage.setItem("mh-recent", JSON.stringify(this.recent));
+    } catch (_) {
+      /* localStorage unavailable */
+    }
   }
 
   setTheme(id) {

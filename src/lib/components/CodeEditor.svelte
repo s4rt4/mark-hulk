@@ -8,6 +8,7 @@
   import { syntaxHighlighting, HighlightStyle } from "@codemirror/language";
   import { tags as t } from "@lezer/highlight";
   import { app } from "$lib/stores/app.svelte.js";
+  import { registerPane, syncFrom } from "$lib/services/scrollSync.js";
 
   let el;
   let view;
@@ -83,7 +84,17 @@
       }),
     });
 
-    return () => view?.destroy();
+    const unregister = registerPane("editor", view.scrollDOM);
+    const onScroll = () => {
+      if (app.view === "split") syncFrom("editor");
+    };
+    view.scrollDOM.addEventListener("scroll", onScroll);
+
+    return () => {
+      view.scrollDOM.removeEventListener("scroll", onScroll);
+      unregister();
+      view?.destroy();
+    };
   });
 
   // Sync external content changes (file open, tree click) into the editor.

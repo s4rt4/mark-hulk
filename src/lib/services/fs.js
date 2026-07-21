@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { open, save } from "@tauri-apps/plugin-dialog";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { open, save, ask } from "@tauri-apps/plugin-dialog";
 import { app } from "$lib/stores/app.svelte.js";
 
 /** True only inside the native Tauri window (not the browser preview). */
@@ -44,7 +45,7 @@ export async function openPath(path) {
 
 /** Persist the active document to disk (prompts for a path if untitled). */
 export async function saveFile() {
-  if (!isTauri()) return false;
+  if (!isTauri() || !app.active) return false;
   let path = app.currentPath;
   if (!path) {
     path = await save({
@@ -57,6 +58,32 @@ export async function saveFile() {
   app.markSaved(path);
   await watch(path);
   return true;
+}
+
+/** Ask the user to confirm discarding unsaved changes. */
+async function confirmDiscard(message) {
+  if (isTauri()) {
+    return await ask(message, {
+      title: "Unsaved changes",
+      kind: "warning",
+      okLabel: "Discard changes",
+      cancelLabel: "Cancel",
+    });
+  }
+  return window.confirm(message);
+}
+
+/** Close a tab, asking first if it has unsaved changes. */
+export async function requestCloseTab(id) {
+  const tab = app.tabs.find((t) => t.id === id);
+  if (!tab) return;
+  if (tab.dirty) {
+    const ok = await confirmDiscard(
+      `"${tab.name}" has unsaved changes.\nClose it anyway?`
+    );
+    if (!ok) return;
+  }
+  app.closeTab(id);
 }
 
 let watching = null;
@@ -117,6 +144,19 @@ export async function loadLaunchFile() {
 /** Wire app-level event listeners once, at app start. */
 export async function initWatcher() {
   if (!isTauri()) return;
+
+  // Guard the window close against unsaved changes.
+  const win = getCurrentWindow();
+  await win.onCloseRequested(async (event) => {
+    const dirtyTabs = app.tabs.filter((t) => t.dirty);
+    if (dirtyTabs.length === 0) return;
+    event.preventDefault();
+    const names = dirtyTabs.map((t) => `• ${t.name}`).join("\n");
+    const ok = await confirmDiscard(
+      `You have unsaved changes:\n${names}\nQuit anyway?`
+    );
+    if (ok) await win.destroy();
+  });
 
   // A second instance (e.g. double-clicking another .md) routes the file here.
   await listen("open-file", async (event) => {

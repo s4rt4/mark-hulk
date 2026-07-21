@@ -100,7 +100,9 @@
   </div>
 
   <div class="right">
-    <span class="words">{app.wordCount} words · {app.charCount} chars</span>
+    {#if app.active}
+      <span class="words">{app.wordCount} words · {app.charCount} chars</span>
+    {/if}
     <button
       class="icon-btn"
       class:on={app.searchOpen}

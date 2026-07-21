@@ -1,10 +1,11 @@
 <script>
   import { X, Plus } from "lucide-svelte";
   import { app } from "$lib/stores/app.svelte.js";
+  import { requestCloseTab } from "$lib/services/fs.js";
 
   function close(e, id) {
     e.stopPropagation();
-    app.closeTab(id);
+    requestCloseTab(id);
   }
 </script>
 

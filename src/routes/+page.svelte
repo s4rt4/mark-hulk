@@ -5,7 +5,8 @@
   import Preview from "$lib/components/Preview.svelte";
   import CodeEditor from "$lib/components/CodeEditor.svelte";
   import Search from "$lib/components/Search.svelte";
-  import { app } from "$lib/stores/app.svelte.js";
+  import Home from "$lib/components/Home.svelte";
+  import { app, SAMPLE } from "$lib/stores/app.svelte.js";
   import {
     isTauri,
     initWatcher,
@@ -18,6 +19,36 @@
     initWatcher();
     loadLaunchFile();
   });
+
+  // Split-view ratio (left pane fraction), draggable and remembered.
+  let split = $state(0.5);
+  let splitEl = $state(null);
+  try {
+    const saved = parseFloat(localStorage.getItem("mh-split"));
+    if (saved >= 0.2 && saved <= 0.8) split = saved;
+  } catch (_) {
+    /* localStorage unavailable */
+  }
+
+  function startDrag(e) {
+    e.preventDefault();
+    const rect = splitEl.getBoundingClientRect();
+    const move = (ev) => {
+      const r = (ev.clientX - rect.left) / rect.width;
+      split = Math.min(0.8, Math.max(0.2, r));
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      try {
+        localStorage.setItem("mh-split", String(split));
+      } catch (_) {
+        /* localStorage unavailable */
+      }
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  }
 
   function onKeydown(e) {
     const mod = e.ctrlKey || e.metaKey;
@@ -55,7 +86,7 @@
       isDir: true,
       children: [
         { name: "README.md", path: "/ws/README.md", isDir: false, content: "# README\n\nThis is a sample file in the demo workspace.\n" },
-        { name: "Welcome to Mark-Hulk.md", path: "/ws/welcome.md", isDir: false, content: app.content },
+        { name: "Welcome to Mark-Hulk.md", path: "/ws/welcome.md", isDir: false, content: SAMPLE },
         {
           name: "Notes",
           path: "/ws/notes",
@@ -83,16 +114,26 @@
 
   <div class="main">
     <Toolbar />
-    <TabBar />
+    {#if app.tabs.length > 0}
+      <TabBar />
+    {/if}
     <div class="content">
-      {#if app.view === "preview"}
+      {#if app.tabs.length === 0}
+        <Home />
+      {:else if app.view === "preview"}
         <Preview />
       {:else if app.view === "edit"}
         <CodeEditor />
       {:else}
-        <div class="split">
-          <div class="pane"><CodeEditor /></div>
-          <div class="divider"></div>
+        <div class="split" bind:this={splitEl}>
+          <div class="pane left" style="width: {split * 100}%"><CodeEditor /></div>
+          <div
+            class="divider"
+            role="separator"
+            aria-orientation="vertical"
+            title="Drag to resize"
+            onpointerdown={startDrag}
+          ></div>
           <div class="pane"><Preview /></div>
         </div>
       {/if}
@@ -130,9 +171,24 @@
     min-width: 0;
     height: 100%;
   }
+  .pane.left {
+    flex: none;
+  }
   .divider {
-    width: 1px;
-    background: var(--border);
+    width: 6px;
     flex-shrink: 0;
+    cursor: col-resize;
+    background: linear-gradient(
+      to right,
+      transparent calc(50% - 0.5px),
+      var(--border) calc(50% - 0.5px),
+      var(--border) calc(50% + 0.5px),
+      transparent calc(50% + 0.5px)
+    );
+    transition: background 0.15s;
+  }
+  .divider:hover,
+  .divider:active {
+    background: var(--accent);
   }
 </style>
